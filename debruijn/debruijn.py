@@ -97,7 +97,6 @@ def read_fastq(fastq_file):
         for i in range(nb_records):
             seq = list_records[i * 4 + 1]
             yield seq
-    pass
 
 
 def cut_kmer(read, kmer_size):
@@ -109,7 +108,6 @@ def cut_kmer(read, kmer_size):
     """
     for i in range(0, len(read) - kmer_size + 1):
         yield read[i : i + kmer_size]
-    pass
 
 
 def build_kmer_dict(fastq_file, kmer_size):
@@ -191,12 +189,13 @@ def select_best_path(
             best_path_index = randint(0, len(path_list) - 1)
             del path_list[best_path_index]
 
-    return remove_paths(
+    graph = remove_paths(
         graph,
         path_list,
         delete_entry_node,
         delete_sink_node,
     )
+    return graph
 
 
 def path_average_weight(graph, path):
@@ -222,7 +221,7 @@ def solve_bubble(graph, ancestor_node, descendant_node):
     paths = list(nx.all_simple_paths(graph, ancestor_node, descendant_node))
     list_weight = [path_average_weight(graph, path) for path in paths]
     path_length = [len(path) for path in paths]
-    return select_best_path(
+    graph = select_best_path(
         graph,
         path_list=paths,
         weight_avg_list=list_weight,
@@ -230,6 +229,7 @@ def solve_bubble(graph, ancestor_node, descendant_node):
         delete_entry_node=False,
         delete_sink_node=False,
     )
+    return graph
 
 
 def simplify_bubbles(graph):
@@ -239,7 +239,7 @@ def simplify_bubbles(graph):
     :return: (nx.DiGraph) A directed graph object
     """
     bubble = False
-    for node in graph:
+    for node in graph.nodes():
         if len(list(graph.successors(node))) > 1:
             predecessors = list(graph.predecessors(node))
             for i in range(len(predecessors) - 1):
@@ -274,7 +274,7 @@ def solve_entry_tips(graph, starting_nodes):
                         list_path.append(path)
                         list_weight.append(path_average_weight(graph, path))
                         path_length.append(len(path))
-
+            break
     if len(list_path) > 1:
         graph = solve_entry_tips(
             select_best_path(
@@ -308,8 +308,9 @@ def solve_out_tips(graph, ending_nodes):
                         list_path.append(path)
                         list_weight.append(path_average_weight(graph, path))
                         path_length.append(len(path))
+            break
     if len(list_path) > 1:
-        graph = solve_entry_tips(
+        graph = solve_out_tips(
             select_best_path(
                 graph,
                 path_list=list_path,
@@ -331,7 +332,7 @@ def get_starting_nodes(graph):
     :return: (list) A list of all nodes without predecessors
     """
     list_pred = []
-    for node in graph:
+    for node in graph.nodes():
         if len(list(graph.predecessors(node))) == 0:
             list_pred.append(node)
     return list_pred
@@ -344,7 +345,7 @@ def get_sink_nodes(graph):
     :return: (list) A list of all nodes without successors
     """
     list_succ = []
-    for node in graph:
+    for node in graph.nodes():
         if len(list(graph.successors(node))) == 0:
             list_succ.append(node)
     return list_succ
@@ -422,10 +423,13 @@ def main():  # pragma: no cover
     # A decommenter si vous souhaitez visualiser un petit
     # graphe
     # Plot the graph
+    # if args.graphimg_file:
+    #    draw_graph(G, args.graphimg_file)
     G = build_graph(build_kmer_dict(args.fastq_file, args.kmer_size))
+    G = simplify_bubbles(G)
+    G = solve_out_tips(G, get_sink_nodes(G))
+    G = solve_entry_tips(G, get_starting_nodes(G))
 
-    if args.graphimg_file:
-        draw_graph(G, args.graphimg_file)
     save_contigs(
         get_contigs(G, get_starting_nodes(G), get_sink_nodes(G)), args.output_file
     )
