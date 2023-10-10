@@ -29,13 +29,13 @@ import matplotlib.pyplot as plt
 
 matplotlib.use("Agg")
 
-__author__ = "Your Name"
+__author__ = "REINE Mathis"
 __copyright__ = "Universite Paris Diderot"
-__credits__ = ["Your Name"]
+__credits__ = ["REINE Mathis"]
 __license__ = "GPL"
 __version__ = "1.0.0"
-__maintainer__ = "Your Name"
-__email__ = "your@email.fr"
+__maintainer__ = "REINE Mathis"
+__email__ = "mathis.reine@etu-paris.fr"
 __status__ = "Developpement"
 
 
@@ -259,26 +259,18 @@ def get_contigs(graph, starting_nodes, ending_nodes):
     :param ending_nodes: (list) A list of nodes without successors
     :return: (list) List of [contiguous sequence and their length]
     """
+    list_contig = []
+    for start_node in starting_nodes:
+        for end_node in ending_nodes:
+            if nx.has_path(graph, start_node, end_node):
+                for path in nx.all_simple_paths(graph, start_node, end_node):
+                    seq = ""
+                    seq += path[0]
+                    for i in range(1, len(path)):
+                        seq = seq + path[i][-1]
+                    list_contig.append((seq, len(seq)))
 
-    def get_contigs(graph, starting_nodes, ending_nodes):
-        """Extract the contigs from the graph
-
-        :param graph: (nx.DiGraph) A directed graph object
-        :param starting_nodes: (list) A list of nodes without predecessors
-        :param ending_nodes: (list) A list of nodes without successors
-        :return: (list) List of [contiguous sequence and their length]
-        """
-        list_contig = []
-        for start_node in starting_nodes:
-            for end_node in ending_nodes:
-                if nx.has_path(graph, start_node, end_node):
-                    for path in nx.all_simple_paths(graph, start_node, end_node)
-
-                        list_contig.append(
-                            [path,len(path)]
-                        )
-
-        return list_contig
+    return list_contig
 
 
 def save_contigs(contigs_list, output_file):
@@ -287,7 +279,10 @@ def save_contigs(contigs_list, output_file):
     :param contig_list: (list) List of [contiguous sequence and their length]
     :param output_file: (str) Path to the output file
     """
-    pass
+    with open(output_file, "wt") as f:
+        for i, contig in enumerate(contigs_list):
+            f.write(f">contig_{str(i)} len={contig[1]}\n")
+            f.write(textwrap.fill(contig[0], width=80) + "\n")
 
 
 def draw_graph(graph, graphimg_file):  # pragma: no cover
@@ -328,8 +323,13 @@ def main():  # pragma: no cover
     # A decommenter si vous souhaitez visualiser un petit
     # graphe
     # Plot the graph
-    # if args.graphimg_file:
-    #     draw_graph(graph, args.graphimg_file)
+    G = build_graph(build_kmer_dict(args.fastq_file, args.kmer_size))
+
+    if args.graphimg_file:
+        draw_graph(G, args.graphimg_file)
+    save_contigs(
+        get_contigs(G, get_starting_nodes(G), get_sink_nodes(G)), args.output_file
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover
