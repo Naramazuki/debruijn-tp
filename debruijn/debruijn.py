@@ -230,7 +230,11 @@ def get_starting_nodes(graph):
     :param graph: (nx.DiGraph) A directed graph object
     :return: (list) A list of all nodes without predecessors
     """
-    pass
+    list_pred = []
+    for node in graph:
+        if len(list(graph.predecessors(node))) == 0:
+            list_pred.append(node)
+    return list_pred
 
 
 def get_sink_nodes(graph):
@@ -239,6 +243,11 @@ def get_sink_nodes(graph):
     :param graph: (nx.DiGraph) A directed graph object
     :return: (list) A list of all nodes without successors
     """
+    list_succ = []
+    for node in graph:
+        if len(list(graph.successors(node))) == 0:
+            list_succ.append(node)
+    return list_succ
     pass
 
 
@@ -250,7 +259,26 @@ def get_contigs(graph, starting_nodes, ending_nodes):
     :param ending_nodes: (list) A list of nodes without successors
     :return: (list) List of [contiguous sequence and their length]
     """
-    pass
+
+    def get_contigs(graph, starting_nodes, ending_nodes):
+        """Extract the contigs from the graph
+
+        :param graph: (nx.DiGraph) A directed graph object
+        :param starting_nodes: (list) A list of nodes without predecessors
+        :param ending_nodes: (list) A list of nodes without successors
+        :return: (list) List of [contiguous sequence and their length]
+        """
+        list_contig = []
+        for start_node in starting_nodes:
+            for end_node in ending_nodes:
+                if nx.has_path(graph, start_node, end_node):
+                    for path in nx.all_simple_paths(graph, start_node, end_node)
+
+                        list_contig.append(
+                            [path,len(path)]
+                        )
+
+        return list_contig
 
 
 def save_contigs(contigs_list, output_file):
