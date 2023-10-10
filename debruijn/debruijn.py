@@ -263,32 +263,30 @@ def solve_entry_tips(graph, starting_nodes):
     :param graph: (nx.DiGraph) A directed graph object
     :return: (nx.DiGraph) A directed graph object
     """
+    list_path = []
+    list_weight = []
+    path_length = []
     for node in list(graph.nodes()):
-        list_path = []
-        list_weight = []
-        path_length = []
-        predecessors = list(graph.predecessors(node))
-        if len(predecessors) > 1:
-            if node not in starting_nodes:
-                for starting_node in starting_nodes:
-                    if nx.has_path(graph, starting_node, node):
-                        for path in nx.all_simple_paths(graph, starting_node, node):
-                            list_path.append(path)
-                            list_weight.append(path_average_weight(graph, path))
-                            path_length.append(len(path))
-                break
-        if len(list_path) > 1:
-            graph = solve_entry_tips(
-                select_best_path(
-                    graph,
-                    path_list=list_path,
-                    weight_avg_list=list_weight,
-                    path_length=path_length,
-                    delete_entry_node=True,
-                    delete_sink_node=False,
-                ),
-                starting_nodes,
-            )
+        if node not in starting_nodes and len(list(graph.predecessors(node))) > 1:
+            for starting_node in starting_nodes:
+                if nx.has_path(graph, starting_node, node):
+                    for path in nx.all_simple_paths(graph, starting_node, node):
+                        list_path.append(path)
+                        list_weight.append(path_average_weight(graph, path))
+                        path_length.append(len(path))
+
+    if len(list_path) > 1:
+        graph = solve_entry_tips(
+            select_best_path(
+                graph,
+                path_list=list_path,
+                weight_avg_list=list_weight,
+                path_length=path_length,
+                delete_entry_node=True,
+                delete_sink_node=False,
+            ),
+            starting_nodes,
+        )
 
     return graph
 
@@ -299,21 +297,17 @@ def solve_out_tips(graph, ending_nodes):
     :param graph: (nx.DiGraph) A directed graph object
     :return: (nx.DiGraph) A directed graph object
     """
-
+    list_path = []
+    list_weight = []
+    path_length = []
     for node in list(graph.nodes()):
-        list_path = []
-        list_weight = []
-        path_length = []
-        predecessors = list(graph.predecessors(node))
-        if len(predecessors) > 1:
-            if node not in ending_nodes:
-                for ending_node in ending_nodes:
-                    if nx.has_path(graph, ending_node, node):
-                        for path in nx.all_simple_paths(graph, ending_node, node):
-                            list_path.append(path)
-                            list_weight.append(path_average_weight(graph, path))
-                            path_length.append(len(path))
-                break
+        if node not in ending_nodes and len(list(graph.successors(node))) > 1:
+            for ending_node in ending_nodes:
+                if nx.has_path(graph, node, ending_node):
+                    for path in nx.all_simple_paths(graph, node, ending_node):
+                        list_path.append(path)
+                        list_weight.append(path_average_weight(graph, path))
+                        path_length.append(len(path))
     if len(list_path) > 1:
         graph = solve_entry_tips(
             select_best_path(
@@ -354,7 +348,6 @@ def get_sink_nodes(graph):
         if len(list(graph.successors(node))) == 0:
             list_succ.append(node)
     return list_succ
-    pass
 
 
 def get_contigs(graph, starting_nodes, ending_nodes):
